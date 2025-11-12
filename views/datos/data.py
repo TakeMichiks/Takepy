@@ -3,74 +3,51 @@ from .. import datos_db
 from flask import jsonify, request
 from marshmallow import ValidationError
 from pathlib import Path
-from ..serializer import libro_schema, libros_schema,DataTeachersSchema
-import os
+from ..serializer import DataTeachersSchema
 
-@datos_db.route("/hello", methods=["GET"])
-def hello():
-    return jsonify({"hello": "Arrosx"})
+# DIRS
+TEACHERS_DIR = Path(__file__).parent / "data" / "dataTeaches.json"
+STUDENTS_DIR = Path(__file__).parent / "data" / "dataStudents.json"
 
+## DEF PRINCIPAL FOR READ AND SAVE DATA
 
-DB_FILE = "libros.json"
-
-
-def leer_db():
-    try:
-        with open(DB_FILE, "r") as f:
-            return json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        return []
-
-
-def escribir_db(data):
-    with open(DB_FILE, "w") as f:
-        json.dump(data, f, indent=4)
-
-
-# --- Rutas de la API de Libros ---
-@datos_db.route("/libros", methods=["GET", "POST"])
-def manejar_libros():
-    if request.method == "POST":
-        json_data = request.get_json()
-        if not json_data:
-            return jsonify({"error": "No se recibieron datos"}), 400
-
-        try:
-            datos_libro = libro_schema.load(json_data)
-        except ValidationError as err:
-            return jsonify(err.messages), 422
-
-        libros = leer_db()
-        nuevo_id = libros[-1]["id"] + 1 if libros else 1
-        datos_libro["id"] = nuevo_id
-
-        libros.append(datos_libro)
-        escribir_db(libros)
-
-        return libro_schema.jsonify(datos_libro), 201
-
-    if request.method == "GET":
-        libros = leer_db()
-        return libros_schema.jsonify(libros)
-
-BASE_DIR = Path(__file__).parent / "data" / "dataTeaches.json"
-
+# DEF TEACHERS -----------
 def teachersview():
     try:
-        BASE_DIR.parent.mkdir(parents=True, exist_ok=True)
+        TEACHERS_DIR.parent.mkdir(parents=True, exist_ok=True)
 
-        with open(BASE_DIR, "r") as f:
+        with open(TEACHERS_DIR, "r") as f:
             return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
         return []
 
 def teacherssave(data):
-    with open(BASE_DIR, "w") as f:
+    with open(TEACHERS_DIR, "w") as f:
         json.dump(data, f, indent=2)
-    
+#---------------------------
+
+# DEF STUDENDS ------------
+def studentview():
+    try:
+        STUDENTS_DIR.parent.mkdir(parents=True,exist_ok=True)
+
+        with open(studentview, "r") as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+            return []
 
 
+def sturdentsave(data):
+    with open(STUDENTS_DIR, "w") as f:
+        json.dump(data, f, indent=2)
+#--------------------------
 
+## ROUTE TEST LIVE FILE
+@datos_db.route("/hello", methods=["GET"])
+def hello():
+    return jsonify({"hello": "Arrosx"})
+
+## START DEF ROUTES
 @datos_db.route("/Teachers", methods=["POST"])
 def teachers():
     
@@ -91,7 +68,7 @@ def teachers():
     datateachersview.append(dataverify)
     teacherssave(datateachersview)
 
-    return jsonify({"success":f"data is save{BASE_DIR}"})
+    return jsonify({"success":f"data is save{TEACHERS_DIR}"})
 
 
 
