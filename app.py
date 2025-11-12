@@ -9,7 +9,7 @@ app = Flask(__name__)
 CORS(app)
 
 # Seccion de Conexiones
-app.register_blueprint(datos_db, url_prefix='/api')
+app.register_blueprint(datos_db, url_prefix='/data')
 app.register_blueprint(datetime_db, url_prefix='/api')
 
 # App run host

@@ -6,5 +6,6 @@ ma = Marshmallow()
 datos_db = Blueprint("views_api", __name__)
 datetime_db = Blueprint('datetime_api', __name__)
 
-from .datos import routes
+#import de las rutas
+from .datos import data
 from .helpers import datetime
