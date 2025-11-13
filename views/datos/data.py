@@ -1,8 +1,8 @@
 # IMPORTS
-import json
 from flask import jsonify, request
 from marshmallow import ValidationError
 from pathlib import Path
+from tinydb import TinyDB
 
 # import Serializer
 from ..serializer import DataTeachersSchema, DataStudentsSchema
@@ -10,52 +10,19 @@ from ..serializer import DataTeachersSchema, DataStudentsSchema
 # import rute
 from .. import datos_db
 
+# Archivos Json
+db = TinyDB("Students_database.json", indent=4)
+dbteachers = TinyDB("Teachers_database.json", indent=4)
+
+# Tablas
+students_table = db.table("Students")
+teacher_table = dbteachers.table("Teachers")
+
 # DIRS
 TEACHERS_DIR = Path(__file__).parent / "data" / "dataTeaches.json"
 STUDENTS_DIR = Path(__file__).parent / "data" / "dataStudents.json"
 
-## DEF PRINCIPAL FOR READ AND SAVE DATA
-
-
-# DEF TEACHERS -----------
-def teachersview():
-    try:
-        TEACHERS_DIR.parent.mkdir(parents=True, exist_ok=True)
-
-        with open(TEACHERS_DIR, "r") as f:
-            return json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        return []
-
-
-def teacherssave(data):
-    with open(TEACHERS_DIR, "w") as f:
-        json.dump(data, f, indent=2)
-
-
-# ---------------------------
-
-
-# DEF STUDENDS ------------
-def studentview():
-    try:
-        STUDENTS_DIR.parent.mkdir(parents=True, exist_ok=True)
-
-        with open(studentview, "r") as f:
-            return json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        return []
-
-
-def sturdentsave(data):
-    with open(STUDENTS_DIR, "w") as f:
-        json.dump(data, f, indent=2)
-
-
-# --------------------------
-
 ## START DEF ROUTES
-
 
 ## ROUTE TEST LIVE FILE
 @datos_db.route("/hello", methods=["GET"])
@@ -66,8 +33,11 @@ def hello():
 # TEACHERS
 @datos_db.route("/TeachersData", methods=["GET"])
 def teachersdata():
-    data = teachersview()
-    return jsonify(data)
+    all_teachers = teacher_table.all()
+
+    for teachers in all_teachers:
+        teachers["id"] = teachers.doc_id
+    return jsonify(all_teachers)
 
 
 @datos_db.route("/Teachers", methods=["POST"])
@@ -82,23 +52,21 @@ def teachers():
     except ValidationError as err:
         return jsonify({"Error": f"Validation Error verific data {err}"}), 402
 
-    datateachersview = teachersview()
-    new_id = datateachersview[-1]["id"] + 1 if datateachersview else 1
-    dataverify["id"] = new_id
+    # Mejora del codigo
+    teachers_id = teacher_table.insert(dataverify)
 
-    datateachersview.append(dataverify)
-    teacherssave(datateachersview)
-
-    return jsonify({"success": f"data is save{TEACHERS_DIR}"}), 200
+    return jsonify({"success": f"data is save{teachers_id}"}), 200
 
 
 # STUDENTS
 
-
 @datos_db.route("/StudentsData", methods=["GET"])
 def studentsdata():
-    data = studentview()
-    return jsonify(data)
+    all_students = students_table.all()
+
+    for students in all_students:
+        students["id"] = students.doc_id
+    return jsonify(all_students)
 
 
 @datos_db.route("/Students", methods=["POST"])
@@ -113,11 +81,6 @@ def students():
     except ValidationError as err:
         return jsonify({"Error": f"data is not valid,verific data:{err}"})
 
-    datastudentsview = studentview()
-    new_id = datastudentsview[-1]["id"] + 1 if datastudentsview else 1
-    dataverify["id"] = new_id
+    students_id = students_table.insert(dataverify)
 
-    datastudentsview.append(dataverify)
-    sturdentsave(datastudentsview)
-
-    return jsonify({"success": f"data is save{STUDENTS_DIR}"}), 200
+    return jsonify({"success": f"data is save{students_id}"}), 200
