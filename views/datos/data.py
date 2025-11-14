@@ -3,7 +3,8 @@ from flask import jsonify, request
 from marshmallow import ValidationError
 from pathlib import Path
 from tinydb import TinyDB
-
+import zipfile
+import datetime
 # import Serializer
 from ..serializer import DataTeachersSchema, DataStudentsSchema
 
@@ -21,13 +22,37 @@ teacher_table = dbteachers.table("Teachers")
 # DIRS
 TEACHERS_DIR = Path(__file__).parent / "data" / "dataTeaches.json"
 STUDENTS_DIR = Path(__file__).parent / "data" / "dataStudents.json"
+DATASEGURE_DIR = Path(__file__).parent / "data"
+SEGURE_DIR = Path(__file__).parent / "SegureData"
 
+DATASEGURE_DIR.mkdir(exist_ok=True)
+SEGURE_DIR.mkdir(exist_ok=True)
 ## START DEF ROUTES
 
 ## ROUTE TEST LIVE FILE
 @datos_db.route("/hello", methods=["GET"])
 def hello():
     return jsonify({"hello": "is alive route"})
+
+## No TESTEADO
+@datos_db.route("/SegureData", methods=["GET"])
+def segureData(): 
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    nombre_zip = f"backup_{timestamp}.zip"
+    ruta_zip_completa = SEGURE_DIR / nombre_zip
+
+    data_list = [f for f in DATASEGURE_DIR.iterdir() if f.is_file()]
+
+    if not data_list:
+        return jsonify("no puede estar vacia la carpeta"), 401
+
+    try:
+        with zipfile.ZipFile(ruta_zip_completa, "w", zipfile.ZIP_DEFLATED) as zipf:
+            for ruta in data_list:
+                zipf.write(ruta, arcname=ruta.name)
+        return jsonify({"success":f"{ruta_zip_completa}"}), 200
+    except Exception as err:
+        return jsonify({"ERROR":f"{err}"}), 500
 
 
 # TEACHERS
